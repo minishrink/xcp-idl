@@ -21,17 +21,42 @@ let default_sockets_dir = "/var/lib/xcp"
 let default_path = ref (Filename.concat default_sockets_dir service_name)
 let uri () = "file:" ^ !default_path
 
+(* --- global types used in most API calls --- *)
+
 type debug_info = string
 (** Uninterpreted/sanitised string associated with operation *)
 [@@deriving rpcty]
 
-type edition_info = {
-  edition: string;
-  xapi_params: (string * string) list;
-  additional_params: (string * string) list;
-  experimental_features: (string * bool) list;
+type edition =
+{
+  name : string ;
+  (** Name of edition, this will be passed to apply_edition *)
+  official_title : string ;
+  (** Marketing title used to advertise edition *)
+  code : string ;
+  (** Abbreviated form of name, used to show up in logs and on command line *)
+  order : int ;
+  (** Number indicating ordering among other editions
+      with low numbers corresponding to editions with fewer features, and vice versa *)
 }
 [@@deriving rpcty]
+
+type edition_list = edition list
+[@@deriving rpcty]
+
+type edition_info = {
+  edition: string;
+	(** Name of edition *)
+  xapi_params: (string * string) list;
+	(** List of parameters used by Xapi *)
+  additional_params: (string * string) list;
+	(** Addition parameters supplied *)
+  experimental_features: (string * bool) list;
+	(** List of experimental features and whether they're available in this edition *)
+}
+[@@deriving rpcty]
+
+(* --- errors wrapped in generic errors type --- *)
 
 type errors =
   | Invalid_edition of string
@@ -45,6 +70,8 @@ type errors =
   | Missing_connection_details
   (** Thrown if connection port or address parameter not supplied to check_license *)
 [@@deriving rpcty]
+
+(* --- API interface --- *)
 
 module API(R : RPC) = struct
   open R
@@ -79,13 +106,14 @@ module API(R : RPC) = struct
     declare
     "get_editions"
     ["Gets list of accepted editions."]
-    ( debug_info @-> edition list : (string * (string * string * int)) list )
+    ( debug_info @-> edition_list )
 
   (* dbg_str @-> result *)
   let get_version =
+    let result_p = Param.mk ~description:["String of version."] Types.string in
     declare
     "get_version"
     ["Returns version"]
-    ( debug_info @-> result : string )
+    ( debug_info @-> returning result_p )
 
 end
