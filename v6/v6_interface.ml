@@ -42,9 +42,11 @@ type edition =
 [@@deriving rpcty]
 
 type edition_list = edition list
+(** List of edition records *)
 [@@deriving rpcty]
 
-type edition_info = {
+type edition_info =
+{
   edition: string;
 	(** Name of edition *)
   xapi_params: (string * string) list;
@@ -54,6 +56,10 @@ type edition_info = {
   experimental_features: (string * bool) list;
 	(** List of experimental features and whether they're available in this edition *)
 }
+[@@deriving rpcty]
+
+type stringPairLst = (string * string) list
+(** [string * string] list *)
 [@@deriving rpcty]
 
 (* --- errors wrapped in generic errors type --- *)
@@ -67,11 +73,17 @@ type errors =
   (** Thrown by license_check when expiry date matches or precedes current date *)
   | License_processing_error
   (** License could not be processed *)
+  | License_checkout_error of string
+  (** License could not be checked out *)
   | Missing_connection_details
   (** Thrown if connection port or address parameter not supplied to check_license *)
+[@@default V6d_failure]
 [@@deriving rpcty]
-
 (* --- API interface --- *)
+
+exception LicensingError of errors
+(** Generic error wrapper for specific licensing errors *)
+[@@deriving rpcty]
 
 module API(R : RPC) = struct
   open R
@@ -92,28 +104,37 @@ module API(R : RPC) = struct
   (* define global parameters for API calls *)
   let debug_info_p = Param.mk ~description:[
     "An uninterpreted string to associate with the operation."
-    ] Types.string 
+    ] debug_info 
+
+  (* ---- TODO : include functor to give 'err' type : TODO ---- *)
+
+  module E  = Idl.Error.Make(struct type t = LicensingError let t=LicensingError end)
+
+  let err = Error.{
+    def = errors;
+    raiser = (function | e -> raise (LicensingError e));
+    matcher = function | LicensingError e -> Some e | _ -> None
+  }
 
   (* dbg_str -> requested edition -> current params -> edition_info *)
   let apply_edition =
-    declare
-    "apply_edition"
+    let edition_p = Param.mk ~description:["Edition tite"] Types.string in
+    let edition_info_p = Param.mk ~description:["Edition info"] edition_info in 
+    let current_params_p = Param.mk ~description:["Xapi paramaters"] stringPairLst in
+    declare "apply_edition"
     ["Checks license info and ensures provided features are compatible."]
-    ( debug_info_p @-> edition_p : string @-> current_params : (string * string) list @-> edition_info )
+    ( debug_info_p @-> edition_p @-> current_params_p @-> returning edition_info_p err )
 
-  (* dbg_str @-> list of editions *)
   let get_editions =
-    declare
-    "get_editions"
+    let edition_list_p = Param.mk ~description:["List of editions"] edition_list in
+    declare "get_editions"
     ["Gets list of accepted editions."]
-    ( debug_info @-> edition_list )
+    ( debug_info_p @-> returning edition_list_p err )
 
-  (* dbg_str @-> result *)
   let get_version =
     let result_p = Param.mk ~description:["String of version."] Types.string in
-    declare
-    "get_version"
+    declare "get_version"
     ["Returns version"]
-    ( debug_info @-> returning result_p )
+    ( debug_info_p @-> returning result_p err )
 
 end
