@@ -25,4 +25,3 @@ module Cli (Daemon_interface : sig
 
 end
 
-let _ = cli ()
