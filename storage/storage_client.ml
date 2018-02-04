@@ -27,18 +27,18 @@ let rec retry_econnrefused f =
       (* error "Caught %s: does the storage service need restarting?" (Printexc.to_string e); *)
       raise e
 
-module Client = Storage_interface.Client(struct
-  let rpc call =
-    retry_econnrefused
-      (fun () ->
-        if !use_switch
-        then json_switch_rpc !queue_name call
-        else xml_http_rpc
-          ~srcstr:(get_user_agent ())
-          ~dststr:"storage"
-        Storage_interface.uri
-        call
+let rpc call =
+  retry_econnrefused
+    (fun () ->
+      if !use_switch
+      then json_switch_rpc !queue_name call
+      else xml_http_rpc
+        ~srcstr:(get_user_agent ())
+        ~dststr:"storage"
+      Storage_interface.uri
+      call
       )
-end)
 
 let default_vdi_info = Storage_interface.default_vdi_info
+
+module Client = RPC_API(Idl.GenClientExnRpc (struct let rpc=rpc end))
