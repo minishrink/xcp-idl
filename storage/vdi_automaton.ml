@@ -18,7 +18,7 @@
 
 (** An automaton representing the VDI state machine *)
 
-type ro_rw = RO | RW [@@deriving rpc]
+type ro_rw = RO | RW [@@deriving rpcty]
 
 let string_of_ro_rw = function
 	| RO -> "RO" | RW -> "RW"
@@ -27,18 +27,18 @@ type state =
 	| Detached
 	| Attached of ro_rw
 	| Activated of ro_rw
-[@@deriving rpc]
+[@@deriving rpcty]
 
 let string_of_state = function
 	| Detached        -> "detached"
 	| Attached ro_rw  -> Printf.sprintf "attached  %s" (string_of_ro_rw ro_rw)
 	| Activated ro_rw -> Printf.sprintf "activated %s" (string_of_ro_rw ro_rw)
 
-let every_state = [
-	Detached;
-	Attached RO; Attached RW;
-	Activated RO; Activated RW
-]
+let every_state =
+  [	Detached
+  ; Attached RO ; Attached RW
+  ;	Activated RO ; Activated RW
+  ]
 
 type op =
 	| Nothing
@@ -47,12 +47,12 @@ type op =
 	| Activate
 	| Deactivate
 
-let every_op = [
-	Nothing;
-	Attach RO; Attach RW;
-	Activate;
-	Detach; Deactivate;
-]
+let every_op =
+  [	Nothing
+  ;	Attach RO; Attach RW
+  ;	Activate
+  ;	Detach; Deactivate
+    ]
 
 let string_of_op = function
 	| Nothing        -> "nothing"
@@ -132,7 +132,7 @@ let test () =
 				let s' = s + op in
 				let op' = List.map fst (s - s') in
 				if s <> s' && [ op ] <> op'
-				then failwith (Printf.sprintf "s = %s; op = %s; s + op = %s; s - (s + op) = %s" 
+				then failwith (Printf.sprintf "s = %s; op = %s; s + op = %s; s - (s + op) = %s"
 					(string_of_state s) (string_of_op op)
 					(string_of_state s')
 					(String.concat ", " (List.map string_of_op op')))
