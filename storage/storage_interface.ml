@@ -236,34 +236,34 @@ end
 
 (** generic storage daemon error type *)
 type storage_errors =
-  | Backend_error_with_backtrace of (string * (string list))
-  (** name * params *)
-  | Sr_not_attached of string
-  (** error: SR must be attached to access VDIs *)
-  | Vdi_does_not_exist of string
-  (** error: the VDI is unknown *)
-  | Illegal_transition of (Vdi_automaton.state * Vdi_automaton.state)
-  (** This operation implies an illegal state transition *)
-  | Backend_error of (string * (string list))
-  (** error: of the form SR_BACKEND_FAILURE *)
-  | Does_not_exist of (string * string)
-  | Cancelled of string
-  | Redirect of string option
-  | Sr_attached of string
-  | Unimplemented of string
-  | Activated_on_another_host of uuid
-  | Duplicated_key of string
-  | No_storage_plugin_for_sr of string
-  | Content_ids_do_not_match of (string * string)
+  | Backend_error_with_backtrace    of (string * (string list))
+                                    (** name * params *)
+  | Sr_not_attached                 of string
+                                    (** error: SR must be attached to access VDIs *)
+  | Vdi_does_not_exist              of string
+                                    (** error: the VDI is unknown *)
+  | Illegal_transition              of (Vdi_automaton.state * Vdi_automaton.state)
+                                    (** This operation implies an illegal state transition *)
+  | Backend_error                   of (string * (string list))
+                                    (** error: of the form SR_BACKEND_FAILURE *)
+  | Does_not_exist                  of (string * string)
+  | Cancelled                       of string
+  | Redirect                        of string option
+  | Sr_attached                     of string
+  | Unimplemented                   of string
+  | Activated_on_another_host       of uuid
+  | Duplicated_key                  of string
+  | No_storage_plugin_for_sr        of string
+  | Content_ids_do_not_match        of (string * string)
   | Missing_configuration_parameter of string
-  | Storage_error of string
+  | Storage_error                   of string
 [@default Storage_error]
 [@@deriving rpcty]
 
 module StorageErrHandler = Error.Make(struct
-    type t = storage_errors
-    let t  = storage_errors
-  end)
+  type t = storage_errors
+  let t  = storage_errors
+end)
 let storage_err = StorageErrHandler.error
 
 (** Storage query result *)
@@ -289,8 +289,8 @@ module RPC_API(R : RPC) = struct
     Interface.{ name = "SMAPIv3"
               ; namespace = None
               ; description =
-                  [ "This interface is used by Xapi and SMAPIv3 to interface "
-                  ; "with the storage layer"]
+                  [ "This interface is used by Xapi and SMAPIv3 "
+                  ; "to interface with the storage layer"]
               ; version=(1,0,0)
               }
 
